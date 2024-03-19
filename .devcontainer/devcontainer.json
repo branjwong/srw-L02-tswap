@@ -1,0 +1,27 @@
+{
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "forwardPorts": [
+        3000
+    ],
+    "customizations": {
+        // Configure properties specific to VS Code.
+        "vscode": {
+            // Add the IDs of extensions you want installed when the container is created.
+            "extensions": [
+                "eamodio.gitlens",
+                "GitHub.copilot-chat",
+                "GitHub.copilot",
+                "mhutchie.git-graph",
+                "tamasfe.even-better-toml",
+                "gimenete.github-linker",
+                "tintinweb.solidity-metrics",
+                "JuanBlanco.solidity"
+            ],
+            "settings": {
+                "solidity.telemetry": true
+            }
+        }
+    }
+}
