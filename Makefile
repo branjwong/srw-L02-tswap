@@ -8,8 +8,10 @@ report:
 # Local Dev Initialization
 
 ln:
-	ln -sf ../../review/src/PuppyRaffle.sol contracts/src/PuppyRaffle.sol
-	ln -sf ../../review/test/PuppyRaffleTest.t.sol contracts/test/PuppyRaffleTest.t.sol
+	# mkdir contracts/test/invariant
+	ln -sf ../../../review/test/invariant/Handler.t.sol contracts/test/invariant/Handler.t.sol
+	ln -sf ../../../review/test/invariant/Invariant.t.sol contracts/test/invariant/Invariant.t.sol
+	ln -sf ../../../review/foundry.toml contracts/foundry.toml
 
 fixperm:
 	sudo chmod -R a+rwX .
