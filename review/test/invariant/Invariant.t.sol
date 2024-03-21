@@ -51,8 +51,8 @@ contract TSwapTest is StdInvariant, Test {
         );
 
         bytes4[] memory selectors = new bytes4[](2);
-        selectors[0] = handler.deposit.selector;
-        selectors[1] = handler.withdraw.selector;
+        selectors[0] = handler.swapExactInputWeth.selector;
+        selectors[1] = handler.swapExactInputPoolToken.selector;
 
         targetSelector(
             FuzzSelector({addr: address(handler), selectors: selectors})
@@ -60,18 +60,14 @@ contract TSwapTest is StdInvariant, Test {
         targetContract(address(handler));
 
         handler.deposit(100e18);
+
+        kConstant =
+            weth.balanceOf(address(pool)) *
+            poolToken.balanceOf(address(pool));
     }
 
-    // This is called at the each stage of the invariant fuzz campaign.
+    // This is called at the end of every fuzz step in invariant fuzz campaign.
     function statefulFuzz_testConstantProductFormulaAlwaysHolds() public {
-        vm.assume(weth.balanceOf(liquidityProvider) > minimumDepositAmount);
-
-        if (kConstant == 0) {
-            kConstant =
-                weth.balanceOf(address(pool)) *
-                poolToken.balanceOf(address(pool));
-        }
-
         assertEq(
             kConstant,
             weth.balanceOf(address(pool)) * poolToken.balanceOf(address(pool))

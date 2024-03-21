@@ -34,7 +34,7 @@ contract Handler is Test {
         minimumDepositAmount = _minimumDepositAmount;
     }
 
-    function deposit(uint256 _amount) public {
+    function deposit(uint256 _amount) external {
         uint256 amount = bound(
             _amount,
             minimumDepositAmount,
@@ -48,7 +48,34 @@ contract Handler is Test {
         vm.stopPrank();
     }
 
-    function withdraw(uint256 _amount) public {
+    function swapExactInputWeth(uint256 _amount) external {
+        swapExactInput(_amount, weth, poolToken);
+    }
+
+    function swapExactInputPoolToken(uint256 _amount) external {
+        swapExactInput(_amount, poolToken, weth);
+    }
+
+    function swapExactInput(
+        uint256 _amount,
+        IERC20 inputToken,
+        IERC20 outputToken
+    ) private {
+        uint256 amount = bound(_amount, 0, inputToken.balanceOf(user));
+
+        vm.startPrank(user);
+        inputToken.approve(address(pool), amount);
+        pool.swapExactInput(
+            inputToken,
+            amount,
+            outputToken,
+            0,
+            uint64(block.timestamp)
+        );
+        vm.stopPrank();
+    }
+
+    function withdraw(uint256 _amount) external {
         uint256 amount = bound(_amount, 0, pool.balanceOf(liquidityProvider));
 
         vm.startPrank(liquidityProvider);
