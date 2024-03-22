@@ -17,6 +17,8 @@ contract TSwapTest is StdInvariant, Test {
     Handler handler;
 
     uint256 kConstant;
+    uint256 lastPoolWethBalance;
+    uint256 lastPoolTokenBalance;
 
     address owner = makeAddr("owner");
 
@@ -59,11 +61,10 @@ contract TSwapTest is StdInvariant, Test {
         );
         targetContract(address(handler));
 
+        calculateK();
         handler.deposit(100e18);
 
-        kConstant =
-            weth.balanceOf(address(pool)) *
-            poolToken.balanceOf(address(pool));
+        kConstant = calculateK();
     }
 
     // This is called at the end of every fuzz step in invariant fuzz campaign.
@@ -72,5 +73,38 @@ contract TSwapTest is StdInvariant, Test {
             kConstant,
             weth.balanceOf(address(pool)) * poolToken.balanceOf(address(pool))
         );
+    }
+
+    function calculateK() private view returns (uint256) {
+        uint256 wethBalance = weth.balanceOf(address(pool));
+        uint256 poolTokenBalance = poolToken.balanceOf(address(pool));
+        uint256 kConstant = wethBalance * poolTokenBalance;
+
+        console.log("kConstant: ", kConstant);
+
+        return kConstant;
+    }
+
+    function expectedOutputDeltaWithoutFees(
+        uint256 deltaInput,
+        uint256 initialInput,
+        uint256 initialOutput
+    ) private returns (uint256) {
+        uint256 alpha = deltaInput / intialInput;
+        return (y * alpha) / (1 + alpha);
+    }
+
+    function expectedOutput(
+        uint256 deltaInput,
+        uint256 initialInput,
+        uint256 initialOutput
+    ) private returns (uint256) {
+        uint256 delta = expectedOutputDeltaWithoutFees(
+            deltaInput,
+            initialInput,
+            initialOutput
+        );
+
+        return initialOutput + delta;
     }
 }
