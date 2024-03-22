@@ -16,10 +16,6 @@ contract TSwapTest is StdInvariant, Test {
     uint256 minimumDepositAmount;
     Handler handler;
 
-    uint256 kConstant;
-    uint256 lastPoolWethBalance;
-    uint256 lastPoolTokenBalance;
-
     address owner = makeAddr("owner");
 
     address liquidityProvider = makeAddr("liquidityProvider");
@@ -58,50 +54,12 @@ contract TSwapTest is StdInvariant, Test {
         );
         targetContract(address(handler));
 
-        calculateK();
         handler.deposit(100e18);
-
-        kConstant = calculateK();
+        handler.saveK();
     }
 
     // This is called at the end of every fuzz step in invariant fuzz campaign.
     function statefulFuzz_testConstantProductFormulaAlwaysHolds() public {
-        assertEq(
-            kConstant,
-            weth.balanceOf(address(pool)) * poolToken.balanceOf(address(pool))
-        );
-    }
-
-    function calculateK() private view returns (uint256) {
-        uint256 wethBalance = weth.balanceOf(address(pool));
-        uint256 poolTokenBalance = poolToken.balanceOf(address(pool));
-        uint256 k = wethBalance * poolTokenBalance;
-
-        console.log("k: ", k);
-
-        return k;
-    }
-
-    function expectedOutputDeltaWithoutFees(
-        uint256 deltaInput,
-        uint256 initialInput,
-        uint256 initialOutput
-    ) private returns (uint256) {
-        uint256 alpha = deltaInput / initialInput;
-        return (initialOutput * alpha) / (1 + alpha);
-    }
-
-    function expectedOutput(
-        uint256 deltaInput,
-        uint256 initialInput,
-        uint256 initialOutput
-    ) private returns (uint256) {
-        uint256 delta = expectedOutputDeltaWithoutFees(
-            deltaInput,
-            initialInput,
-            initialOutput
-        );
-
-        return initialOutput + delta;
+        assertEq(handler.getK(), handler.calculateK());
     }
 }

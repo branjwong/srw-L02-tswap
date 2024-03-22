@@ -16,6 +16,8 @@ contract Handler is Test {
     address liquidityProvider;
     address user;
 
+    uint256 kConstant;
+
     constructor(
         TSwapPool _tswapPool,
         ERC20Mock _poolToken,
@@ -82,5 +84,46 @@ contract Handler is Test {
         pool.approve(address(pool), 100e18);
         pool.withdraw(amount, 1, 1, uint64(block.timestamp));
         vm.stopPrank();
+    }
+
+    function getK() external view returns (uint256) {
+        return kConstant;
+    }
+
+    function saveK() external {
+        kConstant = calculateK();
+    }
+
+    function calculateK() public view returns (uint256) {
+        uint256 wethBalance = weth.balanceOf(address(pool));
+        uint256 poolTokenBalance = poolToken.balanceOf(address(pool));
+        uint256 k = wethBalance * poolTokenBalance;
+
+        console.log("k: ", k);
+
+        return k;
+    }
+
+    function expectedOutputDeltaWithoutFees(
+        uint256 deltaInput,
+        uint256 initialInput,
+        uint256 initialOutput
+    ) private returns (uint256) {
+        uint256 alpha = deltaInput / initialInput;
+        return (initialOutput * alpha) / (1 + alpha);
+    }
+
+    function expectedOutput(
+        uint256 deltaInput,
+        uint256 initialInput,
+        uint256 initialOutput
+    ) private returns (uint256) {
+        uint256 delta = expectedOutputDeltaWithoutFees(
+            deltaInput,
+            initialInput,
+            initialOutput
+        );
+
+        return initialOutput + delta;
     }
 }
