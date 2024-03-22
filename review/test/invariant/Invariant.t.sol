@@ -3,12 +3,12 @@ pragma solidity 0.8.20;
 
 import {Test, console} from "forge-std/Test.sol";
 import {StdInvariant} from "forge-std/StdInvariant.sol";
-import {TSwapPool} from "../../src/PoolFactory.sol";
+import {TSwapPool, PoolFactory, IERC20} from "../../src/PoolFactory.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
-import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {Handler} from "./Handler.t.sol";
 
 contract TSwapTest is StdInvariant, Test {
+    PoolFactory poolFactory;
     TSwapPool pool;
     ERC20Mock poolToken;
     ERC20Mock weth;
@@ -26,14 +26,11 @@ contract TSwapTest is StdInvariant, Test {
     address user = makeAddr("user");
 
     function setUp() public {
-        poolToken = new ERC20Mock();
         weth = new ERC20Mock();
-        pool = new TSwapPool(
-            address(poolToken),
-            address(weth),
-            "LTokenA",
-            "LA"
-        );
+        poolToken = new ERC20Mock();
+
+        poolFactory = new PoolFactory(address(weth));
+        pool = TSwapPool(poolFactory.createPool(address(poolToken)));
 
         weth.mint(liquidityProvider, 200e18);
         poolToken.mint(liquidityProvider, 200e18);
@@ -78,11 +75,11 @@ contract TSwapTest is StdInvariant, Test {
     function calculateK() private view returns (uint256) {
         uint256 wethBalance = weth.balanceOf(address(pool));
         uint256 poolTokenBalance = poolToken.balanceOf(address(pool));
-        uint256 kConstant = wethBalance * poolTokenBalance;
+        uint256 k = wethBalance * poolTokenBalance;
 
-        console.log("kConstant: ", kConstant);
+        console.log("k: ", k);
 
-        return kConstant;
+        return k;
     }
 
     function expectedOutputDeltaWithoutFees(
@@ -90,8 +87,8 @@ contract TSwapTest is StdInvariant, Test {
         uint256 initialInput,
         uint256 initialOutput
     ) private returns (uint256) {
-        uint256 alpha = deltaInput / intialInput;
-        return (y * alpha) / (1 + alpha);
+        uint256 alpha = deltaInput / initialInput;
+        return (initialOutput * alpha) / (1 + alpha);
     }
 
     function expectedOutput(
