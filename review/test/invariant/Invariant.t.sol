@@ -55,11 +55,91 @@ contract TSwapTest is StdInvariant, Test {
         targetContract(address(handler));
 
         handler.deposit(100e18);
-        handler.saveK();
     }
 
     // This is called at the end of every fuzz step in invariant fuzz campaign.
-    function statefulFuzz_testConstantProductFormulaAlwaysHolds() public {
-        assertEq(handler.getK(), handler.calculateK());
+    // function statefulFuzz_testConstantProductFormulaAlwaysHolds() public {
+    //     assertEq(handler.previousKConstant(), handler.calculateK());
+    // }
+
+    // This is called at the end of every fuzz step in invariant fuzz campaign.
+    function statefulFuzz_deltaWithoutFees() public {
+        uint256 initalWeth = handler.previousWethBalance();
+        uint256 initialPoolToken = handler.previousPoolTokenBalance();
+        uint256 finalWeth = weth.balanceOf(address(pool));
+        uint256 finalPoolToken = poolToken.balanceOf(address(pool));
+
+        if (initalWeth > finalWeth) {
+            testSwapWithoutFees(
+                initalWeth - finalWeth,
+                initalWeth,
+                initialPoolToken,
+                finalPoolToken
+            );
+        } else {
+            testSwapWithoutFees(
+                initialPoolToken - finalPoolToken,
+                initialPoolToken,
+                initalWeth,
+                finalWeth
+            );
+        }
+    }
+
+    function testSwapWithoutFees(
+        uint256 deltaInput,
+        uint256 initialInput,
+        uint256 initialOutput,
+        uint256 finalOutput
+    ) private {
+        uint256 expectedDeltaOutput = handler.expectedOutputDeltaWithoutFees(
+            deltaInput,
+            initialInput,
+            initialOutput
+        );
+
+        uint256 actualDeltaOutput = finalOutput - initialOutput;
+
+        assertEq(expectedDeltaOutput, actualDeltaOutput);
+    }
+
+    // function statefulFuzz_deltaWithFees() public {
+    //     uint256 initalWeth = handler.previousWethBalance();
+    //     uint256 initialPoolToken = handler.previousPoolTokenBalance();
+    //     uint256 finalWeth = weth.balanceOf(address(pool));
+    //     uint256 finalPoolToken = poolToken.balanceOf(address(pool));
+
+    //     if (initalWeth > finalWeth) {
+    //         testSwapWithFees(
+    //             initalWeth - finalWeth,
+    //             initalWeth,
+    //             initialPoolToken,
+    //             finalPoolToken
+    //         );
+    //     } else {
+    //         testSwapWithFees(
+    //             initialPoolToken - finalPoolToken,
+    //             initialPoolToken,
+    //             initalWeth,
+    //             finalWeth
+    //         );
+    //     }
+    // }
+
+    function testSwapWithFees(
+        uint256 deltaInput,
+        uint256 initialInput,
+        uint256 initialOutput,
+        uint256 finalOutput
+    ) private {
+        uint256 expectedDeltaOutput = handler.expectedOutputDeltaWithFees(
+            deltaInput,
+            initialInput,
+            initialOutput
+        );
+
+        uint256 actualDeltaOutput = finalOutput - initialOutput;
+
+        assertEq(expectedDeltaOutput, actualDeltaOutput);
     }
 }

@@ -7,7 +7,7 @@ remappings = ['@openzeppelin/contracts=lib/openzeppelin-contracts/contracts']
 
 [fuzz]
 runs = 30
-seed = '0x3'
+seed = '0x0'
 
 [invariant]
 runs = 256

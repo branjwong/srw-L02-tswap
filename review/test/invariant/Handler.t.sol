@@ -16,7 +16,9 @@ contract Handler is Test {
     address liquidityProvider;
     address user;
 
-    uint256 kConstant;
+    uint256 public previousKConstant;
+    uint256 public previousWethBalance;
+    uint256 public previousPoolTokenBalance;
 
     constructor(
         TSwapPool _tswapPool,
@@ -48,6 +50,8 @@ contract Handler is Test {
         poolToken.approve(address(pool), amount);
         pool.deposit(amount, amount, amount, uint64(block.timestamp));
         vm.stopPrank();
+
+        establishState();
     }
 
     function swapExactInputWeth(uint256 _amount) external {
@@ -58,12 +62,20 @@ contract Handler is Test {
         swapExactInput(_amount, poolToken, weth);
     }
 
+    function establishState() private {
+        previousKConstant = calculateK();
+        previousWethBalance = weth.balanceOf(address(pool));
+        previousPoolTokenBalance = poolToken.balanceOf(address(pool));
+    }
+
     function swapExactInput(
         uint256 _amount,
         IERC20 inputToken,
         IERC20 outputToken
     ) private {
         uint256 amount = bound(_amount, 0, inputToken.balanceOf(user));
+
+        establishState();
 
         vm.startPrank(user);
         inputToken.approve(address(pool), amount);
@@ -86,14 +98,6 @@ contract Handler is Test {
         vm.stopPrank();
     }
 
-    function getK() external view returns (uint256) {
-        return kConstant;
-    }
-
-    function saveK() external {
-        kConstant = calculateK();
-    }
-
     function calculateK() public view returns (uint256) {
         uint256 wethBalance = weth.balanceOf(address(pool));
         uint256 poolTokenBalance = poolToken.balanceOf(address(pool));
@@ -108,22 +112,22 @@ contract Handler is Test {
         uint256 deltaInput,
         uint256 initialInput,
         uint256 initialOutput
-    ) private returns (uint256) {
-        uint256 alpha = deltaInput / initialInput;
-        return (initialOutput * alpha) / (1 + alpha);
+    ) external returns (uint256) {
+        return
+            ((initialOutput * deltaInput) / initialInput) /
+            (1 + deltaInput / initialInput);
     }
 
-    function expectedOutput(
+    function expectedOutputDeltaWithFees(
         uint256 deltaInput,
         uint256 initialInput,
         uint256 initialOutput
-    ) private returns (uint256) {
-        uint256 delta = expectedOutputDeltaWithoutFees(
-            deltaInput,
-            initialInput,
-            initialOutput
-        );
+    ) external returns (uint256) {
+        uint256 ay = (deltaInput * 7) / 10 / initialInput;
 
-        return initialOutput + delta;
+        return (((deltaInput * deltaInput * 7) /
+            10 /
+            initialInput /
+            initialInput) / (1 + ay));
     }
 }
