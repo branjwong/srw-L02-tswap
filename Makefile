@@ -23,7 +23,7 @@ fixperm:
 git_url := https://github.com/Cyfrin/5-t-swap-audit.git
 
 init:
-	git init \
+	git init
 	if [ ! -d "contracts" ]; then \
 		git submodule add $(git_url) contracts; \
 	fi
